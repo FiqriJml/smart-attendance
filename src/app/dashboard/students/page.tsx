@@ -56,10 +56,22 @@ export default function StudentManagementPage() {
         // Ideally Student object itself should carry metadata if we want easy filtering, OR we parse Rombel ID.
         if (filterTingkat) {
             const prefix = filterTingkat === "10" ? "X" : filterTingkat === "11" ? "XI" : "XII";
-            // Simple heuristic: X-, XI-, XII- or 10, 11, 12 in string
-            // Assuming Standard SMK naming: X-..., XI-..., XII-... or 10-..., 11-..., 12-...
-            // Adjust based on your Rombel ID convention (e.g. X-TE2)
-            res = res.filter(s => s.rombel_id.startsWith(prefix) || s.rombel_id.startsWith(filterTingkat));
+            // Check for strict prefix followed by separator (-, space) OR just the bare roman numeral (less likely but possible)
+            // But strict check: StartsWith "X" matches "XI".
+            // So for "X" (10), we ensure it starts with "X" but NOT "XI".
+            // For "XI" (11), we ensure it starts with "XI" but NOT "XII".
+            // For "XII" (12), startsWith "XII" is fine.
+
+            res = res.filter(s => {
+                const id = s.rombel_id.toUpperCase(); // Ensure case insensitivity if needed, though usually standard
+                if (filterTingkat === "10") {
+                    return (id.startsWith("X") || id.startsWith("10")) && !id.startsWith("XI");
+                } else if (filterTingkat === "11") {
+                    return (id.startsWith("XI") || id.startsWith("11")) && !id.startsWith("XII");
+                } else {
+                    return id.startsWith("XII") || id.startsWith("12");
+                }
+            });
         }
 
         return res;
