@@ -34,6 +34,12 @@ export default function DashboardLayout({
         <div className="min-h-screen bg-gray-50">
             <nav className="bg-white shadow-sm p-4 flex justify-between items-center">
                 <div className="font-bold text-lg text-blue-600">Smart Attendance</div>
+                <div className="flex items-center gap-6">
+                    <div className="hidden md:flex gap-4 text-sm font-medium text-gray-500">
+                        <a href="/dashboard" className="hover:text-blue-600">Home</a>
+                        <a href="/dashboard/students" className="hover:text-blue-600">Data Siswa</a>
+                    </div>
+                </div>
                 <div className="flex items-center gap-4">
                     <span className="text-sm text-gray-600">Hi, {user.displayName}</span>
                     <button
