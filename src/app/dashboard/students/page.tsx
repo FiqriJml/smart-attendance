@@ -65,6 +65,11 @@ export default function StudentManagementPage() {
         return res;
     }, [students, searchTerm, filterRombel, filterTingkat]);
 
+    // Reset Page on Filter Change
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm, filterRombel, filterTingkat]);
+
     // --- Pagination Logic ---
     const paginatedData = useMemo(() => {
         const start = (page - 1) * ITEMS_PER_PAGE;
@@ -219,7 +224,7 @@ export default function StudentManagementPage() {
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="relative flex-1">
                             <FiSearch className="absolute left-3 top-3 text-gray-400" />
-                            <input type="text" placeholder="Cari siswa..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setPage(1); }} />
+                            <input type="text" placeholder="Cari siswa..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex gap-2">
                             <select className="border rounded-lg px-4 py-2" value={filterTingkat} onChange={e => setFilterTingkat(e.target.value)}>
