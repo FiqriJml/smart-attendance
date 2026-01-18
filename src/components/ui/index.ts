@@ -18,3 +18,5 @@ export type { ModalProps } from "./Modal";
 
 export { Badge, StatusDot } from "./Badge";
 export type { BadgeProps } from "./Badge";
+
+export { InstallPrompt } from "./InstallPrompt";

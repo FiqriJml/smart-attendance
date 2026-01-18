@@ -1,10 +1,11 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
-import { FiHome, FiUsers, FiLogOut, FiMenu, FiBook } from "react-icons/fi";
+import { FiHome, FiUsers, FiLogOut, FiBook, FiSun, FiMoon } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
@@ -13,6 +14,7 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const { user, userProfile, loading, logout } = useAuth();
+    const { resolvedTheme, toggleTheme } = useTheme();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -24,7 +26,7 @@ export default function DashboardLayout({
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="min-h-screen flex items-center justify-center bg-[rgb(var(--color-background))]">
                 <div className="flex flex-col items-center gap-3">
                     <div className="animate-spin rounded-full h-10 w-10 border-3 border-indigo-600 border-t-transparent" />
                     <span className="text-sm text-slate-500">Memuat...</span>
@@ -44,9 +46,9 @@ export default function DashboardLayout({
     const isAdmin = userProfile?.role === "admin";
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-20 md:pb-0">
+        <div className="min-h-screen bg-[rgb(var(--color-background))] pb-20 md:pb-0">
             {/* Desktop Top Navigation */}
-            <nav className="bg-white border-b border-slate-200 sticky top-0 z-40">
+            <nav className="bg-[rgb(var(--color-surface))] border-b border-[rgb(var(--color-border))] sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 md:px-6">
                     <div className="flex h-16 items-center justify-between">
                         {/* Logo */}
@@ -88,8 +90,15 @@ export default function DashboardLayout({
                                 {user.displayName?.charAt(0).toUpperCase()}
                             </div>
                             <button
+                                onClick={toggleTheme}
+                                className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-slate-400 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                title={resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                            >
+                                {resolvedTheme === 'dark' ? <FiSun size={18} /> : <FiMoon size={18} />}
+                            </button>
+                            <button
                                 onClick={() => logout()}
-                                className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:bg-slate-700 rounded-lg transition-colors"
                                 title="Logout"
                             >
                                 <FiLogOut size={18} />
