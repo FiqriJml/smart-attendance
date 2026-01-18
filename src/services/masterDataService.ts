@@ -50,5 +50,10 @@ export const masterDataService = {
         await updateDoc(ref, { daftar_siswa_ref: studentRefs });
 
         // TODO: Trigger sync to 'classes' collection here or via Cloud Function
+    },
+
+    async getAllRombels(): Promise<Rombel[]> {
+        const snap = await getDocs(collection(db, "rombel"));
+        return snap.docs.map(d => d.data() as Rombel);
     }
 };

@@ -31,12 +31,12 @@ export interface Rombel {
 }
 
 export interface ClassSession {
-    id: string; // TINGKAT-ROMBEL-KODE_MAPEL-TAHUN
-    nama_mapel: string;
+    id: string;
     guru_id: string;
-    tingkat: number;
-    rombel_nama: string;
-    daftar_siswa: Student[]; // Synced from Rombel
+    mata_pelajaran: string;
+    rombel_id: string;
+    daftar_siswa: Student[];
+    active: boolean;
 }
 
 export type AttendanceStatus = 'S' | 'I' | 'A';
