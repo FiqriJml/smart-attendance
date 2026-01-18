@@ -74,7 +74,7 @@ export const adminService = {
         // Simplified approach: atomic manual updates (not single batch due to complexity)
 
         // A. Update Student Doc
-        await updateDoc(doc(db, "students", oldData.nisn), newData);
+        await updateDoc(doc(db, "students", oldData.nisn), newData as any);
 
         // B. Rombel Sync (Ref data only)
         const oldRef = { nisn: oldData.nisn, nama: oldData.nama, jk: oldData.jk };
