@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { FiHome, FiUsers, FiLogOut, FiBook, FiSun, FiMoon } from "react-icons/fi";
 import { cn } from "@/lib/utils";
+import { InstallPrompt } from "@/components/ui";
 
 export default function DashboardLayout({
     children,
@@ -144,6 +145,9 @@ export default function DashboardLayout({
                     </button>
                 </div>
             </nav>
+
+            {/* PWA Install Prompt */}
+            <InstallPrompt />
         </div>
     );
 }
