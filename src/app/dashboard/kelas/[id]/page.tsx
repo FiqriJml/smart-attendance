@@ -152,6 +152,12 @@ export default function AttendancePage() {
                             className="bg-transparent border-none outline-none text-sm font-medium text-gray-700 cursor-pointer"
                         />
                     </div>
+                    <button
+                        onClick={() => router.push(`/dashboard/kelas/${classId}/rekap`)}
+                        className="px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
+                    >
+                        Lihat Rekap
+                    </button>
                 </div>
 
                 {/* Stats Bar */}
