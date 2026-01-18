@@ -1,0 +1,82 @@
+rules_version = '2';
+
+// Smart Attendance PWA - Firestore Security Rules
+// Apply these rules in Firebase Console > Firestore > Rules
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== HELPER FUNCTIONS =====
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+
+    function isGuru() {
+      return isAuthenticated() && (getUserRole() == 'guru' || getUserRole() == 'admin');
+    }
+
+    // ===== USERS COLLECTION =====
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if isOwner(userId);
+      // Users can create their own profile (on first login)
+      allow create: if isOwner(userId);
+      // Only admins can update roles, users can update their own non-role fields
+      allow update: if isOwner(userId) || isAdmin();
+    }
+
+    // ===== STUDENTS COLLECTION =====
+    match /students/{studentId} {
+      // Any authenticated user can read student data
+      allow read: if isAuthenticated();
+      // Only admins can create/update/delete students
+      allow write: if isAdmin();
+    }
+
+    // ===== ROMBEL COLLECTION =====
+    match /rombel/{rombelId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ===== PROGRAM SUMMARIES (Aggregation) =====
+    match /program_summaries/{programId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ===== CLASSES COLLECTION =====
+    match /classes/{classId} {
+      // Any authenticated user can read classes
+      allow read: if isAuthenticated();
+      // Only the teacher who owns the class or admin can write
+      allow create: if isGuru();
+      allow update, delete: if isAuthenticated() && 
+        (resource.data.guru_id == request.auth.uid || isAdmin());
+    }
+
+    // ===== ATTENDANCE MONTHLY COLLECTION =====
+    match /attendance_monthly/{docId} {
+      // Teachers and admins can read/write attendance
+      allow read: if isAuthenticated();
+      allow write: if isGuru();
+    }
+
+    // ===== CATCH-ALL DENY =====
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

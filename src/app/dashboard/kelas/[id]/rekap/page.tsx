@@ -155,9 +155,12 @@ export default function RecapPage() {
                             ))}
                         </select>
                         <select value={year} onChange={e => setYear(e.target.value)} className="bg-transparent outline-none text-sm">
-                            <option value="2024">2024</option>
-                            <option value="2025">2025</option>
-                            <option value="2026">2026</option>
+                            {(() => {
+                                const currentYear = new Date().getFullYear();
+                                return [currentYear - 1, currentYear, currentYear + 1].map(y => (
+                                    <option key={y} value={String(y)}>{y}</option>
+                                ));
+                            })()}
                         </select>
                     </div>
 

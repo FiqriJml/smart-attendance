@@ -5,11 +5,35 @@ import Papa from "papaparse";
 import useSWR from "swr"; // Caching Library
 import { adminService, CSVStudentRow } from "@/services/adminService";
 import { Student } from "@/types";
-import { FiEdit2, FiTrash2, FiSearch, FiPlus, FiUpload, FiFilter } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiSearch, FiPlus, FiUpload, FiFilter, FiShieldOff } from "react-icons/fi";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 const fetcher = () => adminService.getAllStudentsOptimized();
 
 export default function StudentManagementPage() {
+    const { userProfile, loading: authLoading } = useAuth();
+    const router = useRouter();
+
+    // RBAC: Only Admin can access this page
+    useEffect(() => {
+        if (!authLoading && userProfile && userProfile.role !== 'admin') {
+            router.replace('/dashboard');
+        }
+    }, [userProfile, authLoading, router]);
+
+    // Show access denied while checking or if not admin
+    if (authLoading) return <div className="p-8 text-center">Memuat...</div>;
+    if (!userProfile || userProfile.role !== 'admin') {
+        return (
+            <div className="p-8 text-center">
+                <FiShieldOff className="mx-auto text-5xl text-red-400 mb-4" />
+                <h2 className="text-xl font-bold text-gray-700">Akses Ditolak</h2>
+                <p className="text-gray-500">Halaman ini hanya untuk Admin.</p>
+            </div>
+        );
+    }
+
     const [activeTab, setActiveTab] = useState<"list" | "csv" | "manual">("list");
 
     // SWR Hook for Caching & Revalidation

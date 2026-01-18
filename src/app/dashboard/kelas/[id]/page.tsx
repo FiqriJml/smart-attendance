@@ -6,7 +6,9 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { ClassSession, Student, AttendanceStatus, AttendanceRecord } from "@/types";
 import { attendanceService } from "@/services/attendanceService";
-import { FiCalendar, FiSave, FiArrowLeft, FiUserCheck, FiUserX, FiActivity } from "react-icons/fi";
+import { classService } from "@/services/classService";
+import { masterDataService } from "@/services/masterDataService";
+import { FiCalendar, FiSave, FiArrowLeft, FiRefreshCw } from "react-icons/fi";
 
 // Helper to format date YYYY-MM-DD
 const getTodayDate = () => new Date().toISOString().split('T')[0];
@@ -21,6 +23,7 @@ export default function AttendancePage() {
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(getTodayDate());
     const [submitting, setSubmitting] = useState(false);
+    const [syncing, setSyncing] = useState(false);
 
     // Attendance State: Map<NISN, Status>
     const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceStatus | 'H'>>({});
@@ -121,6 +124,35 @@ export default function AttendancePage() {
         }
     };
 
+    // Sync students from current Rombel to update Class data
+    const handleSyncStudents = async () => {
+        if (!classData || !classId) return;
+        if (!confirm("Sinkronkan daftar siswa dari Rombel terbaru? Data absensi hari ini tidak akan hilang.")) return;
+
+        setSyncing(true);
+        try {
+            // Fetch latest students from Rombel
+            const students = await masterDataService.getStudentsByRombel(classData.rombel_id);
+
+            // Update Class document
+            await classService.syncClassStudents(classId, students);
+
+            // Refresh local state
+            setClassData(prev => prev ? { ...prev, daftar_siswa: students } : prev);
+
+            // Re-initialize attendance map with new students
+            const newMap: Record<string, AttendanceStatus | 'H'> = {};
+            students.forEach(s => newMap[s.nisn] = attendanceMap[s.nisn] || 'H');
+            setAttendanceMap(newMap);
+
+            alert("Daftar siswa berhasil disinkronkan!");
+        } catch (e: any) {
+            alert("Gagal sinkronisasi: " + e.message);
+        } finally {
+            setSyncing(false);
+        }
+    };
+
     // Counters
     const stats = { H: 0, S: 0, I: 0, A: 0 };
     Object.values(attendanceMap).forEach(s => stats[s]++);
@@ -152,12 +184,22 @@ export default function AttendancePage() {
                             className="bg-transparent border-none outline-none text-sm font-medium text-gray-700 cursor-pointer"
                         />
                     </div>
-                    <button
-                        onClick={() => router.push(`/dashboard/kelas/${classId}/rekap`)}
-                        className="px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
-                    >
-                        Lihat Rekap
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleSyncStudents}
+                            disabled={syncing}
+                            className="px-3 py-1.5 bg-orange-50 text-orange-600 text-xs font-bold rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors flex items-center gap-1 disabled:opacity-50"
+                        >
+                            <FiRefreshCw className={syncing ? "animate-spin" : ""} />
+                            {syncing ? "Sinkron..." : "Sync Siswa"}
+                        </button>
+                        <button
+                            onClick={() => router.push(`/dashboard/kelas/${classId}/rekap`)}
+                            className="px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
+                        >
+                            Lihat Rekap
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stats Bar */}
