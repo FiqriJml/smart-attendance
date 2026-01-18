@@ -1,26 +1,152 @@
 @import "tailwindcss";
 
+/* ============================================
+   Smart Attendance Design System
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary Colors (Indigo) */
+  --color-primary-50: 238 242 255;
+  --color-primary-100: 224 231 255;
+  --color-primary-500: 99 102 241;
+  --color-primary-600: 79 70 229;
+  --color-primary-700: 67 56 202;
+  
+  /* Semantic Colors */
+  --color-success: 16 185 129;      /* Emerald 500 - Hadir */
+  --color-warning: 245 158 11;      /* Amber 500 - Izin */
+  --color-danger: 244 63 94;        /* Rose 500 - Alpha */
+  --color-info: 14 165 233;         /* Sky 500 - Sakit */
+  
+  /* Neutral Colors (Slate) */
+  --color-background: 248 250 252;  /* Slate 50 */
+  --color-surface: 255 255 255;     /* White */
+  --color-border: 226 232 240;      /* Slate 200 */
+  --color-text-primary: 30 41 59;   /* Slate 800 */
+  --color-text-secondary: 100 116 139; /* Slate 500 */
+  --color-text-muted: 148 163 184;  /* Slate 400 */
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  
+  /* Spacing Scale */
+  --spacing-page: 1rem;
 }
 
+@media (min-width: 768px) {
+  :root {
+    --spacing-page: 2rem;
+  }
+}
+
+/* Tailwind Theme Extension */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: rgb(var(--color-background));
+  --color-foreground: rgb(var(--color-text-primary));
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Base Styles */
+body {
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-text-primary));
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--color-background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--color-text-muted));
+}
+
+/* Selection */
+::selection {
+  background: rgb(var(--color-primary-100));
+  color: rgb(var(--color-primary-700));
+}
+
+/* Focus Ring Utility */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2;
+}
+
+/* Animation Utilities */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes zoom-in-95 {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
 }
+
+.animate-in {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fade-in;
+}
+
+.slide-up {
+  animation-name: slide-up;
+}
+
+.zoom-in-95 {
+  animation-name: zoom-in-95;
+}
+
+/* Status Colors - Attendance */
+.status-hadir { color: rgb(var(--color-success)); }
+.status-sakit { color: rgb(var(--color-info)); }
+.status-izin { color: rgb(var(--color-warning)); }
+.status-alpha { color: rgb(var(--color-danger)); }
+
+.bg-status-hadir { background: rgb(var(--color-success) / 0.1); }
+.bg-status-sakit { background: rgb(var(--color-info) / 0.1); }
+.bg-status-izin { background: rgb(var(--color-warning) / 0.1); }
+.bg-status-alpha { background: rgb(var(--color-danger) / 0.1); }
