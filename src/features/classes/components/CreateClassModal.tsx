@@ -73,7 +73,7 @@ export function CreateClassModal({
                     <option value="">-- Pilih Rombel --</option>
                     {rombels.map((r) => (
                         <option key={r.id} value={r.id}>
-                            {r.nama_rombel}
+                            {r.id}
                         </option>
                     ))}
                 </Select>
