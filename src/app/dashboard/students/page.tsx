@@ -57,7 +57,9 @@ function StudentManagementContent() {
         page,
         setPage,
         totalPages,
-        totalFiltered
+
+        totalFiltered,
+        uniqueRombels
     } = useStudents(20);
 
     const [activeTab, setActiveTab] = useState<"list" | "csv" | "manual">("list");
@@ -368,13 +370,18 @@ function StudentManagementContent() {
                                     <option value="11">Kelas 11</option>
                                     <option value="12">Kelas 12</option>
                                 </select>
-                                <input
-                                    type="text"
-                                    placeholder="Filter Rombel..."
-                                    className="border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-32"
+                                <select
+                                    className="border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-40"
                                     value={filterRombel}
                                     onChange={e => setFilterRombel(e.target.value)}
-                                />
+                                >
+                                    <option value="">Semua Rombel</option>
+                                    {uniqueRombels.map(rombel => (
+                                        <option key={rombel} value={rombel}>
+                                            {rombel}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
