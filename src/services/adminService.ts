@@ -137,6 +137,7 @@ export const adminService = {
                 nama: row.Nama,
                 jk: row.JK as Gender,
                 rombel_id: row.Rombel,
+                tingkat: row.Tingkat ? parseInt(row.Tingkat) : undefined, // Fix: Map Tingkat
                 tanggal_masuk: new Date().toISOString().split('T')[0]
             };
             students.push(student);
@@ -214,5 +215,62 @@ export const adminService = {
             studentsAdded: students.length,
             rombelsUpdated: rombelMap.size
         };
+    },
+
+    // 4. Migration Tool (One-off)
+    async migrateTingkatData() {
+        console.log("Starting migration: enriching student data with 'tingkat'...");
+
+        const batch = writeBatch(db);
+        let batchCount = 0;
+
+        // Strategy: Iterate Program Summaries directly
+        // This covers both Program Summary arrays AND individual Student docs (via batch)
+        const summarySnap = await getDocs(collection(db, "program_summaries"));
+
+        for (const summaryDoc of summarySnap.docs) {
+            const data = summaryDoc.data();
+            const students = (data.students as Student[]) || [];
+            let changed = false;
+
+            const updatedList = students.map(s => {
+                // If tingkat is missing, try to detect it
+                if (!s.tingkat) {
+                    let tingkat: number | 0 = 0;
+                    const rombel = s.rombel_id.toUpperCase();
+
+                    if (rombel.startsWith("X ") || rombel.startsWith("10")) tingkat = 10;
+                    else if (rombel.startsWith("XI ") || rombel.startsWith("11")) tingkat = 11;
+                    else if (rombel.startsWith("XII ") || rombel.startsWith("12")) tingkat = 12;
+
+                    if (tingkat > 0) {
+                        changed = true;
+
+                        // 1. Update Object in Memory for Array
+                        const sNew = { ...s, tingkat };
+
+                        // 2. Queue Batch Update for Individual Student Doc
+                        batch.update(doc(db, "students", s.nisn), { tingkat });
+                        batchCount++;
+
+                        return sNew;
+                    }
+                }
+                return s;
+            });
+
+            if (changed) {
+                // 3. Update Program Summary Doc
+                batch.update(summaryDoc.ref, { students: updatedList });
+                batchCount++;
+            }
+        }
+
+        if (batchCount > 0) {
+            await batch.commit();
+        }
+
+        console.log(`Migration complete. Updated ${batchCount} operations.`);
+        return batchCount;
     }
 };
