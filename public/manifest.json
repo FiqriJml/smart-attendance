@@ -2,21 +2,38 @@
     "name": "Smart Attendance PWA",
     "short_name": "Attendance",
     "description": "Smart Attendance PWA for SMK",
+    "id": "/",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#4f46e5",
+    "orientation": "portrait",
     "icons": [
         {
             "src": "/icons/icon-192x192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "maskable"
         },
         {
             "src": "/icons/icon-512x512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         }
     ],
-    "orientation": "portrait"
+    "screenshots": [
+        {
+            "src": "/screenshots/mobile.png",
+            "sizes": "375x811",
+            "type": "image/png",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "/screenshots/desktop.png",
+            "sizes": "1024x720",
+            "type": "image/png",
+            "form_factor": "wide"
+        }
+    ]
 }
