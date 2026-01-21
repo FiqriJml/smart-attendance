@@ -225,6 +225,22 @@ function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
                                 <FiTool className="inline mr-2" size={16} />
                                 Fix Data
                             </button>
+                            <button
+                                onClick={async () => {
+                                    if (!confirm("Inisialisasi Sistem (Koleksi Settings & Periods)?")) return;
+                                    try {
+                                        await adminService.initializeSystem();
+                                        alert("Sistem berhasil diinisialisasi!");
+                                    } catch (e: any) {
+                                        alert("Error: " + e.message);
+                                    }
+                                }}
+                                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-white hover:shadow transition-all"
+                                title="Init System"
+                            >
+                                <FiTool className="inline mr-2" size={16} />
+                                Init System
+                            </button>
                         </>
                     )}
                 </div>

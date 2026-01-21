@@ -9,7 +9,8 @@ import {
     deleteDoc,
     arrayUnion,
     arrayRemove,
-    setDoc
+    setDoc,
+    serverTimestamp
 } from "firebase/firestore";
 import { Student, Rombel, Gender } from "@/types";
 
@@ -122,7 +123,21 @@ export const adminService = {
         }
     },
 
+    async getActivePeriod(): Promise<string> {
+        try {
+            const docRef = doc(db, "app_settings", "global");
+            const snap = await getDoc(docRef);
+            if (snap.exists() && snap.data().active_period_id) {
+                return snap.data().active_period_id;
+            }
+        } catch (e) {
+            console.error("Error fetching active period", e);
+        }
+        return "2025-2026-genap"; // Fallback default as per instructions
+    },
+
     async processCSVData(rows: CSVStudentRow[]) {
+        const activePeriodId = await this.getActivePeriod();
         const batch = writeBatch(db);
         const students: Student[] = [];
         const rombelMap = new Map<string, Rombel>();
@@ -147,18 +162,27 @@ export const adminService = {
                 const prog = row["Program Keahlian"] || "Umum";
                 const komp = row["Kompetensi Keahlian"] || null;
 
+                // Composite ID: active_period_id + rombel_original
+                // e.g. "2025-2026-genap-X-TE1"
+                const compositeId = `${activePeriodId}-${row.Rombel}`;
+
                 rombelMap.set(row.Rombel, {
-                    id: row.Rombel,
-                    nama_rombel: `${row.Tingkat} ${komp || prog} ${row.Rombel.split('-').pop()}`,
+                    id: compositeId,
+                    nama_rombel: row.Rombel, // Store original name for display
                     tingkat: parseInt(row.Tingkat) as 10 | 11 | 12,
                     program_keahlian: prog,
                     kompetensi_keahlian: komp,
+                    period_id: activePeriodId,
                     daftar_siswa_ref: []
                 });
             }
 
             // Add to Rombel Ref
             const rombel = rombelMap.get(row.Rombel)!;
+
+            // Link student to Composite ID
+            student.rombel_id = rombel.id;
+
             if (!rombel.daftar_siswa_ref.some(s => s.nisn === student.nisn)) {
                 rombel.daftar_siswa_ref.push({
                     nisn: student.nisn,
@@ -215,6 +239,30 @@ export const adminService = {
             studentsAdded: students.length,
             rombelsUpdated: rombelMap.size
         };
+    },
+
+    // 4. Initialization (One-off)
+    async initializeSystem() {
+        const batch = writeBatch(db);
+
+        // 1. App Settings
+        batch.set(doc(db, "app_settings", "global"), {
+            active_period_id: "2025-2026-genap",
+            updated_at: serverTimestamp()
+        });
+
+        // 2. Period Doc
+        batch.set(doc(db, "periods", "2025-2026-genap"), {
+            id: "2025-2026-genap",
+            nama_periode: "Tahun Pelajaran 2025/2026 - Genap",
+            tahun_ajaran: "2025/2026",
+            semester: "Genap",
+            is_active: true,
+            tanggal_mulai: "2026-01-05"
+        });
+
+        await batch.commit();
+        return "System Initialized";
     },
 
     // 4. Migration Tool (One-off)

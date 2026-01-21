@@ -28,6 +28,7 @@ export interface Rombel {
     tingkat: 10 | 11 | 12;
     program_keahlian: string;
     kompetensi_keahlian: string | null; // Null for grade 10
+    period_id?: string; // e.g. "2025-2026-genap"
     daftar_siswa_ref: Array<{ nisn: string; nama: string; jk: Gender }>;
 }
 
