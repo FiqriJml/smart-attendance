@@ -40,11 +40,11 @@ export default function DashboardLayout({
 
     const navItems = [
         { href: "/dashboard", icon: FiHome, label: "Home" },
-        { href: "/dashboard/students", icon: FiUsers, label: "Siswa", adminOnly: true },
+        { href: "/dashboard/students", icon: FiUsers, label: "Siswa" },
     ];
 
     const isActive = (href: string) => pathname === href;
-    const isAdmin = userProfile?.role === "admin";
+
 
     return (
         <div className="min-h-screen bg-[rgb(var(--color-background))] pb-20 md:pb-0">
@@ -63,7 +63,6 @@ export default function DashboardLayout({
                         {/* Desktop Nav Items */}
                         <div className="hidden md:flex items-center gap-1">
                             {navItems.map((item) => {
-                                if (item.adminOnly && !isAdmin) return null;
                                 return (
                                     <Link
                                         key={item.href}
@@ -118,7 +117,6 @@ export default function DashboardLayout({
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 safe-area-pb">
                 <div className="flex items-center justify-around py-2">
                     {navItems.map((item) => {
-                        if (item.adminOnly && !isAdmin) return null;
                         const Icon = item.icon;
                         return (
                             <Link
