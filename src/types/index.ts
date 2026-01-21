@@ -17,7 +17,8 @@ export interface Student {
     nisn: string; // Primary Key
     nama: string;
     jk: Gender;
-    rombel_id: string; // e.g. "X-TE2"
+    rombel_id: string; // e.g. "X-TE2" (or composite "2025-2026-genap-X-TE2")
+    nama_rombel?: string; // Display Name e.g. "X TE2"
     tingkat?: number; // 10, 11, 12
     tanggal_masuk: string; // YYYY-MM-DD
 }

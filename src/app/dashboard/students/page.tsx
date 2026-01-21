@@ -386,9 +386,9 @@ function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
                                     onChange={e => setFilterRombel(e.target.value)}
                                 >
                                     <option value="">Semua Rombel</option>
-                                    {uniqueRombels.map(rombel => (
-                                        <option key={rombel} value={rombel}>
-                                            {rombel}
+                                    {uniqueRombels.map(r => (
+                                        <option key={r.id} value={r.id}>
+                                            {r.name}
                                         </option>
                                     ))}
                                 </select>
@@ -424,7 +424,7 @@ function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
                                                     <Badge variant={s.jk === 'L' ? 'info' : 'warning'}>{s.jk}</Badge>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm">
-                                                    <Badge variant="default">{s.rombel_id}</Badge>
+                                                    <Badge variant="default">{s.nama_rombel || s.rombel_id}</Badge>
                                                 </td>
                                                 {isAdmin && (
                                                     <td className="px-6 py-4 text-right">

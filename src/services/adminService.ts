@@ -182,6 +182,7 @@ export const adminService = {
 
             // Link student to Composite ID
             student.rombel_id = rombel.id;
+            student.nama_rombel = row.Rombel; // Clean display name
 
             if (!rombel.daftar_siswa_ref.some(s => s.nisn === student.nisn)) {
                 rombel.daftar_siswa_ref.push({

@@ -47,7 +47,7 @@ interface UseStudentsReturn {
     /** Items per page */
     itemsPerPage: number;
     /** Unique rombel IDs for filter dropdown */
-    uniqueRombels: string[];
+    uniqueRombels: { id: string, name: string }[];
 }
 
 export function useStudents(itemsPerPage: number = 20): UseStudentsReturn {
@@ -73,9 +73,17 @@ export function useStudents(itemsPerPage: number = 20): UseStudentsReturn {
     }, [searchTerm, filterRombel, filterTingkat]);
 
     // Extract unique rombels for dropdown
+    // Extract unique rombels for dropdown
     const uniqueRombels = useMemo(() => {
-        const rombels = new Set(students.map(s => s.rombel_id));
-        return Array.from(rombels).sort();
+        const map = new Map<string, string>();
+        students.forEach(s => {
+            if (s.rombel_id && !map.has(s.rombel_id)) {
+                map.set(s.rombel_id, s.nama_rombel || s.rombel_id);
+            }
+        });
+        return Array.from(map.entries())
+            .map(([id, name]) => ({ id, name }))
+            .sort((a, b) => a.name.localeCompare(b.name));
     }, [students]);
 
     // Filtered data
