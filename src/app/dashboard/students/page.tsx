@@ -26,23 +26,13 @@ export default function StudentManagementPage() {
         );
     }
 
-    if (!userProfile || userProfile.role !== 'admin') {
-        return (
-            <Card className="text-center py-12">
-                <FiShieldOff className="mx-auto text-5xl text-rose-400 mb-4" />
-                <h2 className="text-xl font-bold text-slate-700">Akses Ditolak</h2>
-                <p className="text-slate-500 mt-2">Halaman ini hanya untuk Admin.</p>
-                <Button onClick={() => router.push("/dashboard")} variant="secondary" className="mt-4">
-                    Kembali ke Dashboard
-                </Button>
-            </Card>
-        );
-    }
+    // Access Check removed: All roles can view
+    const isAdmin = userProfile?.role === 'admin';
 
-    return <StudentManagementContent />;
+    return <StudentManagementContent isAdmin={isAdmin} />;
 }
 
-function StudentManagementContent() {
+function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
     // Use the custom hook for all student data logic
     const {
         paginatedStudents,
@@ -205,34 +195,38 @@ function StudentManagementContent() {
                         <FiUsers className="inline mr-2" size={16} />
                         Data Siswa
                     </button>
-                    <button
-                        onClick={() => { setActiveTab("manual"); resetForm(); }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "manual"
-                            ? "bg-white shadow text-indigo-600"
-                            : "text-slate-500 hover:text-slate-700"
-                            }`}
-                    >
-                        <FiPlus className="inline mr-2" size={16} />
-                        Tambah
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("csv")}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "csv"
-                            ? "bg-white shadow text-indigo-600"
-                            : "text-slate-500 hover:text-slate-700"
-                            }`}
-                    >
-                        <FiUpload className="inline mr-2" size={16} />
-                        Import
-                    </button>
-                    <button
-                        onClick={handleMigration}
-                        className="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-white hover:shadow transition-all"
-                        title="Perbaiki Data Tingkat"
-                    >
-                        <FiTool className="inline mr-2" size={16} />
-                        Fix Data
-                    </button>
+                    {isAdmin && (
+                        <>
+                            <button
+                                onClick={() => { setActiveTab("manual"); resetForm(); }}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "manual"
+                                    ? "bg-white shadow text-indigo-600"
+                                    : "text-slate-500 hover:text-slate-700"
+                                    }`}
+                            >
+                                <FiPlus className="inline mr-2" size={16} />
+                                Tambah
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("csv")}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "csv"
+                                    ? "bg-white shadow text-indigo-600"
+                                    : "text-slate-500 hover:text-slate-700"
+                                    }`}
+                            >
+                                <FiUpload className="inline mr-2" size={16} />
+                                Import
+                            </button>
+                            <button
+                                onClick={handleMigration}
+                                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-white hover:shadow transition-all"
+                                title="Perbaiki Data Tingkat"
+                            >
+                                <FiTool className="inline mr-2" size={16} />
+                                Fix Data
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -395,7 +389,7 @@ function StudentManagementContent() {
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">L/P</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Rombel</th>
-                                            <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi</th>
+                                            {isAdmin && <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-slate-100">
@@ -416,14 +410,16 @@ function StudentManagementContent() {
                                                 <td className="px-6 py-4 text-sm">
                                                     <Badge variant="default">{s.rombel_id}</Badge>
                                                 </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button onClick={() => startEdit(s)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors mr-1">
-                                                        <FiEdit2 size={16} />
-                                                    </button>
-                                                    <button onClick={() => { setDeletingStudent(s); setDeleteConfirmText(""); }} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
-                                                        <FiTrash2 size={16} />
-                                                    </button>
-                                                </td>
+                                                {isAdmin && (
+                                                    <td className="px-6 py-4 text-right">
+                                                        <button onClick={() => startEdit(s)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors mr-1">
+                                                            <FiEdit2 size={16} />
+                                                        </button>
+                                                        <button onClick={() => { setDeletingStudent(s); setDeleteConfirmText(""); }} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+                                                            <FiTrash2 size={16} />
+                                                        </button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))}
                                         {!isLoading && paginatedStudents.length === 0 && (
