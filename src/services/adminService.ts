@@ -147,29 +147,35 @@ export const adminService = {
         for (const row of rows) {
             if (!row.NISN || !row.Rombel) continue;
 
+            const sNisn = String(row.NISN);
+            const sNama = String(row.Nama);
+            const sRombel = String(row.Rombel);
+            const sTingkat = row.Tingkat ? String(row.Tingkat) : undefined;
+            const sJK = String(row.JK) as Gender;
+
             const student: Student = {
-                nisn: row.NISN,
-                nama: row.Nama,
-                jk: row.JK as Gender,
-                rombel_id: row.Rombel,
-                tingkat: row.Tingkat ? parseInt(row.Tingkat) : undefined, // Fix: Map Tingkat
+                nisn: sNisn,
+                nama: sNama,
+                jk: sJK,
+                rombel_id: sRombel,
+                tingkat: sTingkat ? parseInt(sTingkat) : undefined, // Fix: Map Tingkat
                 tanggal_masuk: new Date().toISOString().split('T')[0]
             };
             students.push(student);
 
             // Group Rombel
-            if (!rombelMap.has(row.Rombel)) {
+            if (!rombelMap.has(sRombel)) {
                 const prog = row["Program Keahlian"] || "Umum";
                 const komp = row["Kompetensi Keahlian"] || null;
 
                 // Composite ID: active_period_id + rombel_original
                 // e.g. "2025-2026-genap-X-TE1"
-                const compositeId = `${activePeriodId}-${row.Rombel}`;
+                const compositeId = `${activePeriodId}-${sRombel}`;
 
-                rombelMap.set(row.Rombel, {
+                rombelMap.set(sRombel, {
                     id: compositeId,
-                    nama_rombel: row.Rombel, // Store original name for display
-                    tingkat: parseInt(row.Tingkat) as 10 | 11 | 12,
+                    nama_rombel: sRombel, // Store original name for display
+                    tingkat: sTingkat ? (parseInt(sTingkat) as 10 | 11 | 12) : 10,
                     program_keahlian: prog,
                     kompetensi_keahlian: komp,
                     period_id: activePeriodId,
@@ -178,11 +184,11 @@ export const adminService = {
             }
 
             // Add to Rombel Ref
-            const rombel = rombelMap.get(row.Rombel)!;
+            const rombel = rombelMap.get(sRombel)!;
 
             // Link student to Composite ID
             student.rombel_id = rombel.id;
-            student.nama_rombel = row.Rombel; // Clean display name
+            student.nama_rombel = sRombel; // Clean display name
 
             if (!rombel.daftar_siswa_ref.some(s => s.nisn === student.nisn)) {
                 rombel.daftar_siswa_ref.push({

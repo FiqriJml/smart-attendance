@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import { useAuth } from "@/context/AuthContext";
 import { useStudents } from "@/features/students/hooks/useStudents";
 import { adminService, CSVStudentRow } from "@/services/adminService";
@@ -113,24 +114,44 @@ function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
         }
     };
 
-    const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: async (results) => {
-                try {
-                    const res = await adminService.processCSVData(results.data as CSVStudentRow[]);
-                    setSummary(`Berhasil import ${res.studentsAdded} siswa.`);
-                    refresh();
-                    setActiveTab("list");
-                } catch (e: any) {
-                    alert("Error CSV: " + e.message);
-                }
+        const processData = async (data: any[]) => {
+            try {
+                const res = await adminService.processCSVData(data as CSVStudentRow[]);
+                setSummary(`Berhasil import ${res.studentsAdded} siswa.`);
+                refresh();
+                setActiveTab("list");
+            } catch (e: any) {
+                alert("Error Import: " + e.message);
             }
-        });
+        };
+
+        if (file.name.endsWith(".csv")) {
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => processData(results.data)
+            });
+        } else {
+            // Excel
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const bstr = evt.target?.result;
+                    const wb = XLSX.read(bstr, { type: 'binary' });
+                    const wsname = wb.SheetNames[0];
+                    const ws = wb.Sheets[wsname];
+                    const data = XLSX.utils.sheet_to_json(ws);
+                    await processData(data);
+                } catch (e: any) {
+                    alert("Error Excel: " + e.message);
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
     };
 
     const handleMigration = async () => {
@@ -265,7 +286,7 @@ function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
                         </div>
                         <div>
                             <h3 className="text-lg font-medium text-slate-700">Import Data Siswa</h3>
-                            <p className="text-sm text-slate-500 mt-1">Upload file CSV sesuai template</p>
+                            <p className="text-sm text-slate-500 mt-1">Upload file Excel (.xlsx) atau CSV sesuai template</p>
                         </div>
                         <div className="flex flex-col items-center gap-4">
                             <Button variant="outline" onClick={downloadTemplate}>
@@ -274,8 +295,8 @@ function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
                             </Button>
                             <input
                                 type="file"
-                                accept=".csv"
-                                onChange={handleCSVUpload}
+                                accept=".csv, .xlsx, .xls"
+                                onChange={handleFileUpload}
                                 className="block w-full max-w-xs text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:bg-indigo-50 file:text-indigo-700 file:border-0 hover:file:bg-indigo-100"
                             />
                         </div>
