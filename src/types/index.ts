@@ -19,6 +19,7 @@ export interface Student {
     jk: Gender;
     rombel_id: string; // e.g. "X-TE2" (or composite "2025-2026-genap-X-TE2")
     nama_rombel?: string; // Display Name e.g. "X TE2"
+    program_keahlian?: string; // Injected at runtime or stored
     tingkat?: number; // 10, 11, 12
     tanggal_masuk: string; // YYYY-MM-DD
 }

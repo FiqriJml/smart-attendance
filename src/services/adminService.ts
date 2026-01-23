@@ -24,6 +24,8 @@ export interface CSVStudentRow {
     "Kompetensi Keahlian": string;
 }
 
+const createSlug = (str: string) => str.toLowerCase().replace(/\s+/g, '-');
+
 export const adminService = {
 
     // NEW: Get all students via Program Summaries (Optimized Read)
@@ -32,8 +34,15 @@ export const adminService = {
         let allStudents: Student[] = [];
         snap.docs.forEach(doc => {
             const data = doc.data();
+            const programName = data.nama_program || doc.id; // Fallback to ID for old data
+
             if (data.students && Array.isArray(data.students)) {
-                allStudents = [...allStudents, ...data.students];
+                // Inject program name into student objects for filtering
+                const enrichedStudents = data.students.map((s: any) => ({
+                    ...s,
+                    program_keahlian: programName
+                }));
+                allStudents = [...allStudents, ...enrichedStudents];
             }
         });
         return allStudents;
@@ -58,9 +67,13 @@ export const adminService = {
         // Safer to Read-Modify-Write the Program Summary if we want to be sure, OR use the exact object we have in memory.
         // Let's try arrayRemove with the student object passed in.
         if (program) {
-            batch.update(doc(db, "program_summaries", program), {
+            // Try to delete from slugified ID (new structure)
+            const slug = createSlug(program);
+            batch.update(doc(db, "program_summaries", slug), {
                 students: arrayRemove(student)
             });
+            // Note: If using old structure (ID = Name), this might fail. 
+            // Assuming migration or fresh start.
         }
 
         await batch.commit();
@@ -107,7 +120,8 @@ export const adminService = {
         // THIS IS A CAVEAT. 
         // Solution: We will just update the Target Program Summary.
 
-        const summaryRef = doc(db, "program_summaries", rombelMeta.program);
+        const slug = createSlug(rombelMeta.program);
+        const summaryRef = doc(db, "program_summaries", slug);
 
         // We can't use arrayRemove(oldData) easily if we don't know the old Program name. 
         // We'll read the summary, filter out the NISN, and push new data.
@@ -227,15 +241,11 @@ export const adminService = {
 
         // NOTE: Batch limit 500. arrayUnion is 1 op.
         programMap.forEach((studentList, progName) => {
-            const ref = doc(db, "program_summaries", progName);
-            // We can't guarantee 'program_summaries' doc exists.
-            // set with merge: true will create if not exists, but won't append to array correctly (it replaces if field exists?).
-            // No, set({students: arrayUnion(...) }, {merge:true}) works!
-            // But arrayUnion checks uniqueness by value (exact object).
+            const slug = createSlug(progName);
+            const ref = doc(db, "program_summaries", slug);
 
-            // IMPORTANT: We need to chunk arrayUnion if > 500 items? No, arrayUnion limit is document size (1MB).
-            // Let's use arrayUnion.
             batch.set(ref, {
+                nama_program: progName, // Save original name field
                 students: arrayUnion(...studentList)
             }, { merge: true });
         });

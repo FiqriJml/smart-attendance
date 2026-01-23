@@ -36,6 +36,10 @@ interface UseStudentsReturn {
     filterTingkat: string;
     /** Set tingkat filter */
     setFilterTingkat: (tingkat: string) => void;
+    /** Current program filter */
+    filterProgram: string;
+    /** Set program filter */
+    setFilterProgram: (program: string) => void;
     /** Current page number (1-indexed) */
     page: number;
     /** Set current page */
@@ -48,6 +52,8 @@ interface UseStudentsReturn {
     itemsPerPage: number;
     /** Unique rombel IDs for filter dropdown */
     uniqueRombels: { id: string, name: string }[];
+    /** Unique programs */
+    uniquePrograms: string[];
 }
 
 export function useStudents(itemsPerPage: number = 20): UseStudentsReturn {
@@ -65,12 +71,13 @@ export function useStudents(itemsPerPage: number = 20): UseStudentsReturn {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterRombel, setFilterRombel] = useState("");
     const [filterTingkat, setFilterTingkat] = useState("");
+    const [filterProgram, setFilterProgram] = useState("");
     const [page, setPage] = useState(1);
 
     // Reset page when filters change
     useEffect(() => {
         setPage(1);
-    }, [searchTerm, filterRombel, filterTingkat]);
+    }, [searchTerm, filterRombel, filterTingkat, filterProgram]);
 
     // Extract unique rombels for dropdown
     // Extract unique rombels for dropdown
@@ -84,6 +91,17 @@ export function useStudents(itemsPerPage: number = 20): UseStudentsReturn {
         return Array.from(map.entries())
             .map(([id, name]) => ({ id, name }))
             .sort((a, b) => a.name.localeCompare(b.name));
+    }, [students]);
+
+    // Extract unique programs
+    const uniquePrograms = useMemo(() => {
+        const programs = new Set<string>();
+        students.forEach(s => {
+            if (s.program_keahlian) {
+                programs.add(s.program_keahlian);
+            }
+        });
+        return Array.from(programs).sort();
     }, [students]);
 
     // Filtered data
@@ -111,8 +129,13 @@ export function useStudents(itemsPerPage: number = 20): UseStudentsReturn {
             result = result.filter(s => s.tingkat === tingkatNumber);
         }
 
+        // Program filter
+        if (filterProgram) {
+            result = result.filter(s => s.program_keahlian === filterProgram);
+        }
+
         return result;
-    }, [students, searchTerm, filterRombel, filterTingkat]);
+    }, [students, searchTerm, filterRombel, filterTingkat, filterProgram]);
 
     // Pagination
     const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
@@ -140,6 +163,9 @@ export function useStudents(itemsPerPage: number = 20): UseStudentsReturn {
         totalPages,
         totalFiltered: filteredStudents.length,
         itemsPerPage,
-        uniqueRombels
+        uniqueRombels,
+        uniquePrograms,
+        filterProgram,
+        setFilterProgram
     };
 }

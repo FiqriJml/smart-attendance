@@ -11,7 +11,7 @@ import { Student } from "@/types";
 import { Button, Card, Input, Select, Modal, ModalFooter, Badge } from "@/components/ui";
 import {
     FiSearch, FiPlus, FiUpload, FiDownload, FiEdit2, FiTrash2,
-    FiShieldOff, FiChevronLeft, FiChevronRight, FiUsers, FiTool
+    FiShieldOff, FiChevronLeft, FiChevronRight, FiUsers, FiTool, FiBook
 } from "react-icons/fi";
 
 export default function StudentManagementPage() {
@@ -50,7 +50,10 @@ function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
         totalPages,
 
         totalFiltered,
-        uniqueRombels
+        uniqueRombels,
+        uniquePrograms,
+        filterProgram,
+        setFilterProgram
     } = useStudents(20);
 
     const [activeTab, setActiveTab] = useState<"list" | "csv" | "manual">("list");
@@ -105,7 +108,7 @@ function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
     const handleDelete = async () => {
         if (!deletingStudent) return;
         try {
-            await adminService.deleteStudent(deletingStudent, "Umum");
+            await adminService.deleteStudent(deletingStudent, deletingStudent.program_keahlian || "Umum");
             setSummary("Siswa dihapus.");
             refresh();
             setDeletingStudent(null);
@@ -414,7 +417,24 @@ function StudentManagementContent({ isAdmin }: { isAdmin: boolean }) {
                                     ))}
                                 </select>
                             </div>
+                            {/* Program Filter */}
+                            <div className="flex gap-2 items-center bg-white border border-slate-300 rounded-lg px-2">
+                                <FiBook className="text-slate-400" size={16} />
+                                <select
+                                    className="text-sm font-medium text-slate-700 bg-transparent py-2.5 border-none outline-none focus:ring-0 cursor-pointer min-w-[150px]"
+                                    value={filterProgram}
+                                    onChange={e => setFilterProgram(e.target.value)}
+                                >
+                                    <option value="">Semua Jurusan</option>
+                                    {uniquePrograms.map(p => (
+                                        <option key={p} value={p}>
+                                            {p}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
+
 
                         {/* Table */}
                         <Card noPadding className="overflow-hidden">
