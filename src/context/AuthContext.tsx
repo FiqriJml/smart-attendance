@@ -1,3 +1,4 @@
+"use strict";
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
@@ -9,7 +10,7 @@ import {
     User
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { UserProfile } from "@/types";
 
 interface AuthContextType {
@@ -32,54 +33,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(firebaseUser);
 
             if (firebaseUser) {
-                // Sync user to Firestore
-                const userRef = doc(db, "users", firebaseUser.uid);
-                const userSnap = await getDoc(userRef);
+                const emailKey = firebaseUser.email;
 
-                if (!userSnap.exists()) {
-                    // Check for pre-registered profile by email (created by Admin)
-                    const q = query(collection(db, "users"), where("email", "==", firebaseUser.email));
-                    const querySnapshot = await getDocs(q);
+                if (!emailKey) {
+                    await signOut(auth);
+                    alert("Email tidak valid. Login dibatalkan.");
+                    setUserProfile(null);
+                    setLoading(false);
+                    return;
+                }
 
-                    let newProfile: UserProfile;
+                // Strict Whitelist Mode: ID Document = Email
+                const userRef = doc(db, "users", emailKey);
+                try {
+                    const userSnap = await getDoc(userRef);
 
-                    if (!querySnapshot.empty) {
-                        // Found pre-registered profile -> Migrate
-                        const preRegDoc = querySnapshot.docs[0];
-                        const preRegData = preRegDoc.data() as UserProfile;
+                    if (userSnap.exists()) {
+                        const profile = userSnap.data() as UserProfile;
 
-                        newProfile = {
-                            ...preRegData,
-                            uid: firebaseUser.uid,
-                            nama: firebaseUser.displayName || preRegData.nama, // Prefer Auth name or Pre-reg name? Auth name usually better.
-                            email: firebaseUser.email || "",
-                            // Role is preserved from preRegData
-                            createdAt: new Date()
-                        };
+                        if (profile.is_active) {
+                            // Access Granted
 
-                        // Cleanup old doc
-                        await deleteDoc(preRegDoc.ref);
+                            // Optional: Bind UID for reference if changed/missing
+                            if (profile.uid !== firebaseUser.uid) {
+                                await updateDoc(userRef, {
+                                    uid: firebaseUser.uid,
+                                    updatedAt: serverTimestamp()
+                                });
+                            }
+
+                            setUserProfile({ ...profile, uid: firebaseUser.uid });
+                        } else {
+                            // Account Inactive
+                            await signOut(auth);
+                            alert("Akses Ditolak. Akun Anda dinonaktifkan oleh Admin.");
+                            setUserProfile(null);
+                        }
                     } else {
-                        // Default new profile
-                        newProfile = {
-                            uid: firebaseUser.uid,
-                            nama: firebaseUser.displayName || "User",
-                            email: firebaseUser.email || "",
-                            role: "guru",
-                            createdAt: new Date()
-                        };
+                        // Not in Whitelist. CHECK LEGACY UID (Migration)
+                        const uidRef = doc(db, "users", firebaseUser.uid);
+                        const uidSnap = await getDoc(uidRef);
+
+                        if (uidSnap.exists()) {
+                            const oldProfile = uidSnap.data() as UserProfile;
+
+                            // Allow migration if active (or check for role admin)
+                            // Legacy data might not have is_active, so default to true if undefined
+                            if (oldProfile.is_active !== false) {
+                                const newProfile: UserProfile = {
+                                    ...oldProfile,
+                                    email: emailKey, // Force email key
+                                    uid: firebaseUser.uid,
+                                    is_active: true, // Set explicit active
+                                    updatedAt: serverTimestamp() as any
+                                };
+
+                                // Migrate
+                                await setDoc(userRef, newProfile);
+                                await deleteDoc(uidRef);
+
+                                setUserProfile(newProfile);
+                                // alert("Akun Anda telah dimigrasi ke sistem baru.");
+                                return;
+                            }
+                        }
+
+                        // Not in Whitelist and No Legacy Account
+                        await signOut(auth);
+                        alert("Akses Ditolak. Email Anda tidak terdaftar. Silakan hubungi Admin (Pak Indra) untuk pendaftaran.");
+                        setUserProfile(null);
                     }
-
-                    // Create UID-based doc
-                    await setDoc(userRef, {
-                        ...newProfile,
-                        createdAt: serverTimestamp(),
-                        updatedAt: serverTimestamp()
-                    });
-
-                    setUserProfile(newProfile);
-                } else {
-                    setUserProfile(userSnap.data() as UserProfile);
+                } catch (err) {
+                    console.error("Auth Error:", err);
+                    setUserProfile(null);
                 }
             } else {
                 setUserProfile(null);

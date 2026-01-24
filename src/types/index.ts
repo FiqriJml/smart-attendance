@@ -1,24 +1,25 @@
-export type UserRole = 'admin' | 'guru' | 'bk';
+export type UserRole = 'admin' | 'bk' | 'wali_kelas' | 'guru';
 
 export interface UserProfile {
-    uid: string;
-    nama: string;
+    // Document ID = email
     email: string;
+    nama: string;
     role: UserRole;
-    is_active?: boolean; // Access control
-
-    // Guru Specific
-    is_wali_kelas?: boolean;
-    wali_kelas_rombel_id?: string; // Single Rombel ID
+    is_active: boolean; // Security Gate
 
     // BK Specific
-    bk_wilayah?: string; // e.g. "Wilayah Bu Ana"
-    bk_rombels?: string[]; // List of Rombel IDs responsible for
+    nama_wilayah?: string;
+    assigned_rombel_ids?: string[];
 
+    // Wali Kelas Specific
+    wali_rombel_id?: string;
+
+    // Optional Metadata
+    uid?: string; // Linked Google UID (set on login)
     program_keahlian?: string;
     is_kaprog?: boolean;
-    createdAt?: Date; // Local helper
-    updatedAt?: Date; // Local helper
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export type Gender = 'L' | 'P';

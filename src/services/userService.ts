@@ -10,8 +10,7 @@ import {
     query,
     where,
     serverTimestamp,
-    orderBy,
-    addDoc
+    orderBy
 } from "firebase/firestore";
 
 export const userService = {
@@ -28,23 +27,10 @@ export const userService = {
         }
     },
 
-    async createPendingUser(userData: Omit<UserProfile, 'uid'>): Promise<void> {
-        try {
-            await addDoc(collection(db, "users"), {
-                ...userData,
-                uid: "pending", // Placeholder
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
-        } catch (error) {
-            console.error("Error creating pending user:", error);
-            throw error;
-        }
-    },
-
     async createUser(userData: UserProfile): Promise<void> {
         try {
-            await setDoc(doc(db, "users", userData.uid), {
+            // Strict Whitelist: ID is Email
+            await setDoc(doc(db, "users", userData.email), {
                 ...userData,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
@@ -55,9 +41,9 @@ export const userService = {
         }
     },
 
-    async updateUser(uid: string, data: Partial<UserProfile>): Promise<void> {
+    async updateUser(email: string, data: Partial<UserProfile>): Promise<void> {
         try {
-            await updateDoc(doc(db, "users", uid), {
+            await updateDoc(doc(db, "users", email), {
                 ...data,
                 updatedAt: serverTimestamp()
             });
@@ -67,25 +53,17 @@ export const userService = {
         }
     },
 
-    async toggleUserStatus(uid: string, isActive: boolean): Promise<void> {
-        return this.updateUser(uid, { is_active: isActive });
+    async toggleUserStatus(email: string, isActive: boolean): Promise<void> {
+        return this.updateUser(email, { is_active: isActive });
     },
 
     // === HELPER OPERATIONS ===
 
     async getAllRombels(): Promise<Rombel[]> {
         try {
-            // We fetch from 'rombel' collection or build distinct list from students/summaries
-            // Since we have a 'rombel' collection being built in AdminService (partially), 
-            // OR we can fetch unique rombels from students if 'rombel' collection isn't fully maintained.
-            // Requirement V1.5 plan says "rombel" collection exists.
-
-            // Assuming 'rombel' collection is authoritative for Rombel List
             const snapshot = await getDocs(collection(db, "rombel"));
-            // If empty (legacy), might need fallback. But let's assume valid.
             const rombels = snapshot.docs.map(doc => {
                 const data = doc.data();
-                // Ensure ID and Nama are present
                 return {
                     id: doc.id,
                     nama_rombel: data.nama_rombel || doc.id,
