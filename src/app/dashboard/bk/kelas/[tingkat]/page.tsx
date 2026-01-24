@@ -33,7 +33,18 @@ export default function BKKelasPage() {
         </div>
     );
 
-    const gradeRombels = (rombels || []).filter(r => Number(r.tingkat) === tingkat);
+    const createSlug = (str: string) => str.toLowerCase().replace(/\s+/g, '-');
+    const isKaprog = userProfile?.role === 'admin' && !!userProfile.assigned_program_id;
+
+    let gradeRombels = (rombels || []).filter(r => Number(r.tingkat) === tingkat);
+
+    if (isKaprog) {
+        gradeRombels = gradeRombels.filter(r =>
+            r.program_keahlian &&
+            createSlug(r.program_keahlian) === userProfile.assigned_program_id
+        );
+    }
+
     const gradeLabel = tingkat === 10 ? "X" : tingkat === 11 ? "XI" : "XII";
 
     return (
@@ -46,7 +57,9 @@ export default function BKKelasPage() {
                     </Button>
                 </Link>
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Kelas {gradeLabel}</h1>
+                    <h1 className="text-2xl font-bold text-slate-800">
+                        Kelas {gradeLabel} {isKaprog && `(Program: ${userProfile.assigned_program_id})`}
+                    </h1>
                     <p className="text-slate-500">Pilih rombel untuk mengisi kehadiran</p>
                 </div>
             </div>
@@ -58,7 +71,10 @@ export default function BKKelasPage() {
                         Tidak Ada Rombel
                     </h3>
                     <p className="text-slate-500">
-                        Belum ada rombel untuk Kelas {gradeLabel}
+                        {isKaprog
+                            ? `Tidak ada rombel untuk program ini di Kelas ${gradeLabel}`
+                            : `Belum ada rombel untuk Kelas ${gradeLabel}`
+                        }
                     </p>
                 </Card>
             ) : (

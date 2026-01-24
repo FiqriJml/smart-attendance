@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useAuth } from "@/context/AuthContext";
 import { userService } from "@/services/userService";
+import { adminService } from "@/services/adminService";
 import { UserProfile, UserRole, Rombel } from "@/types";
 import {
     Button, Card, Input, Select, Modal, ModalFooter, Badge
@@ -23,6 +24,7 @@ export default function UserManagementPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
     const [rombels, setRombels] = useState<Rombel[]>([]);
+    const [programs, setPrograms] = useState<{ id: string, name: string }[]>([]);
 
     // Form State
     const [formData, setFormData] = useState<{
@@ -34,9 +36,11 @@ export default function UserManagementPage() {
         wali_rombel_id: string;
         nama_wilayah: string;
         assigned_rombel_ids: string[];
+        assigned_program_id: string;
     }>({
         nama: "", email: "", role: "guru", is_active: true,
-        wali_rombel_id: "", nama_wilayah: "", assigned_rombel_ids: []
+        wali_rombel_id: "", nama_wilayah: "", assigned_rombel_ids: [],
+        assigned_program_id: ""
     });
 
     // -- Data --
@@ -51,13 +55,15 @@ export default function UserManagementPage() {
 
     useEffect(() => {
         userService.getAllRombels().then(setRombels);
+        adminService.getAllPrograms().then(setPrograms);
     }, []);
 
     // -- Handlers --
     const resetForm = () => {
         setFormData({
             nama: "", email: "", role: "guru", is_active: true,
-            wali_rombel_id: "", nama_wilayah: "", assigned_rombel_ids: []
+            wali_rombel_id: "", nama_wilayah: "", assigned_rombel_ids: [],
+            assigned_program_id: ""
         });
         setEditingUser(null);
     };
@@ -71,7 +77,8 @@ export default function UserManagementPage() {
             is_active: user.is_active,
             wali_rombel_id: user.wali_rombel_id || "",
             nama_wilayah: user.nama_wilayah || "",
-            assigned_rombel_ids: user.assigned_rombel_ids || []
+            assigned_rombel_ids: user.assigned_rombel_ids || [],
+            assigned_program_id: user.assigned_program_id || ""
         });
         setIsModalOpen(true);
     };
@@ -88,6 +95,7 @@ export default function UserManagementPage() {
                 wali_rombel_id: formData.role === 'wali_kelas' ? formData.wali_rombel_id : undefined,
                 nama_wilayah: formData.role === 'bk' ? formData.nama_wilayah : undefined,
                 assigned_rombel_ids: formData.role === 'bk' ? formData.assigned_rombel_ids : undefined,
+                assigned_program_id: formData.role === 'admin' ? formData.assigned_program_id : undefined,
                 // Preserve Metadata if editing
                 uid: editingUser?.uid,
                 createdAt: editingUser?.createdAt,
@@ -284,6 +292,27 @@ export default function UserManagementPage() {
                     </div>
 
                     {/* Conditional Logic */}
+                    {formData.role === 'admin' && (
+                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Assignment Program (Kaprog)
+                            </label>
+                            <select
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                                value={formData.assigned_program_id}
+                                onChange={e => setFormData({ ...formData, assigned_program_id: e.target.value })}
+                            >
+                                <option value="">None (Super Admin)</option>
+                                {programs.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Jika dipilih, admin hanya dapat memantau rombel dari program ini.
+                            </p>
+                        </div>
+                    )}
+
                     {['guru', 'wali_kelas'].includes(formData.role) && (
                         <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
                             <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">

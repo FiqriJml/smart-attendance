@@ -48,6 +48,15 @@ export const adminService = {
         return allStudents;
     },
 
+    // Get all available programs (for Kaprog assignment)
+    async getAllPrograms(): Promise<{ id: string; name: string }[]> {
+        const snap = await getDocs(collection(db, "program_summaries"));
+        return snap.docs.map(doc => ({
+            id: doc.id, // slug
+            name: doc.data().nama_program || doc.id
+        }));
+    },
+
     async deleteStudent(student: Student, program: string) {
         const batch = writeBatch(db);
 

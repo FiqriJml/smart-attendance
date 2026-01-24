@@ -25,13 +25,18 @@ export default function BKDashboardPage() {
         { tingkat: 12, label: "Kelas XII", color: "from-purple-500 to-purple-600" },
     ];
 
+    const isKaprog = userProfile.role === 'admin' && !!userProfile.assigned_program_id;
+
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-slate-800">Dashboard BK</h1>
+                <h1 className="text-2xl font-bold text-slate-800">
+                    {isKaprog ? "Dashboard Kaprog" : "Dashboard BK"}
+                </h1>
                 <p className="text-slate-500">
                     Selamat datang, {userProfile.nama}
                     {userProfile.nama_wilayah && ` - ${userProfile.nama_wilayah}`}
+                    {isKaprog && ` - Program: ${userProfile.assigned_program_id}`}
                 </p>
             </div>
 
@@ -49,20 +54,22 @@ export default function BKDashboardPage() {
                     </Link>
                 ))}
 
-                <Link href={userProfile.role === 'admin' ? "/dashboard/bk/monitoring-wilayah" : "/dashboard/bk/wilayah"}>
-                    <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-6 hover:scale-[1.02] transition-transform cursor-pointer">
-                        <FiMapPin className="mb-3" size={28} />
-                        <h3 className="text-lg font-bold">
-                            {userProfile.role === 'admin' ? "Data Wilayah BK" : "Wilayah Saya"}
-                        </h3>
-                        <p className="text-sm opacity-80">
-                            {userProfile.role === 'admin'
-                                ? "Monitoring semua wilayah BK"
-                                : `${(userProfile.assigned_rombel_ids || []).length} Rombel Binaan`
-                            }
-                        </p>
-                    </Card>
-                </Link>
+                {!isKaprog && (
+                    <Link href={userProfile.role === 'admin' ? "/dashboard/bk/monitoring-wilayah" : "/dashboard/bk/wilayah"}>
+                        <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-6 hover:scale-[1.02] transition-transform cursor-pointer">
+                            <FiMapPin className="mb-3" size={28} />
+                            <h3 className="text-lg font-bold">
+                                {userProfile.role === 'admin' ? "Data Wilayah BK" : "Wilayah Saya"}
+                            </h3>
+                            <p className="text-sm opacity-80">
+                                {userProfile.role === 'admin'
+                                    ? "Monitoring semua wilayah BK"
+                                    : `${(userProfile.assigned_rombel_ids || []).length} Rombel Binaan`
+                                }
+                            </p>
+                        </Card>
+                    </Link>
+                )}
             </div>
         </div>
     );

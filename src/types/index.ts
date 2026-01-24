@@ -18,6 +18,7 @@ export interface UserProfile {
     uid?: string; // Linked Google UID (set on login)
     program_keahlian?: string;
     is_kaprog?: boolean;
+    assigned_program_id?: string; // For Admin/Kaprog: Slug of the Program Keahlian
     createdAt?: Date;
     updatedAt?: Date;
 }
