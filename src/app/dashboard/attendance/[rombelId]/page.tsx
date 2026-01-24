@@ -16,7 +16,7 @@ export default function DailyAttendancePage() {
     const { userProfile, loading } = useAuth();
     const router = useRouter();
     const params = useParams();
-    const rombelId = params.rombelId as string;
+    const rombelId = decodeURIComponent(params.rombelId as string);
 
     const [selectedDate, setSelectedDate] = useState(
         new Date().toISOString().split('T')[0]
@@ -102,9 +102,19 @@ export default function DailyAttendancePage() {
         }
     };
 
-    if (loading || !userProfile || isLoading || !rombel) return (
+    if (loading || !userProfile || isLoading) return (
         <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-10 w-10 border-3 border-indigo-600 border-t-transparent" />
+        </div>
+    );
+
+    if (!rombel) return (
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div className="text-xl font-bold text-slate-800">Rombel Tidak Ditemukan</div>
+            <p className="text-slate-500">ID Rombel: {rombelId}</p>
+            <Link href={getBackLink()}>
+                <Button>Kembali</Button>
+            </Link>
         </div>
     );
 
@@ -116,8 +126,8 @@ export default function DailyAttendancePage() {
         { value: 'alpha', label: 'Alpha', color: 'bg-red-500' }
     ];
 
-    const getBackLink = () => {
-        if (userProfile.role === 'bk') return '/dashboard/bk';
+    function getBackLink() {
+        if (userProfile?.role === 'bk') return '/dashboard/bk';
         return '/dashboard';
     };
 
