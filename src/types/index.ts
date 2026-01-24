@@ -1,10 +1,20 @@
-export type UserRole = 'admin' | 'guru';
+export type UserRole = 'admin' | 'guru' | 'bk';
 
 export interface UserProfile {
     uid: string;
     nama: string;
     email: string;
     role: UserRole;
+    is_active?: boolean; // Access control
+
+    // Guru Specific
+    is_wali_kelas?: boolean;
+    wali_kelas_rombel_id?: string; // Single Rombel ID
+
+    // BK Specific
+    bk_wilayah?: string; // e.g. "Wilayah Bu Ana"
+    bk_rombels?: string[]; // List of Rombel IDs responsible for
+
     program_keahlian?: string;
     is_kaprog?: boolean;
     createdAt?: Date; // Local helper

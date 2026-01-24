@@ -9,7 +9,7 @@ import {
     User
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs, deleteDoc } from "firebase/firestore";
 import { UserProfile } from "@/types";
 
 interface AuthContextType {
@@ -37,17 +37,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const userSnap = await getDoc(userRef);
 
                 if (!userSnap.exists()) {
-                    // Create new user profile
-                    const newProfile: UserProfile = {
-                        uid: firebaseUser.uid,
-                        nama: firebaseUser.displayName || "User",
-                        email: firebaseUser.email || "",
-                        role: "guru", // Default role, maybe change later
-                        createdAt: new Date(), // Local object, will need to be careful with Firestore types vs JS Date
-                        // We usually let Firestore serverTimestamp handle this, but for local state we use Date
-                    };
+                    // Check for pre-registered profile by email (created by Admin)
+                    const q = query(collection(db, "users"), where("email", "==", firebaseUser.email));
+                    const querySnapshot = await getDocs(q);
 
-                    // For Firestore write using serverTimestamp
+                    let newProfile: UserProfile;
+
+                    if (!querySnapshot.empty) {
+                        // Found pre-registered profile -> Migrate
+                        const preRegDoc = querySnapshot.docs[0];
+                        const preRegData = preRegDoc.data() as UserProfile;
+
+                        newProfile = {
+                            ...preRegData,
+                            uid: firebaseUser.uid,
+                            nama: firebaseUser.displayName || preRegData.nama, // Prefer Auth name or Pre-reg name? Auth name usually better.
+                            email: firebaseUser.email || "",
+                            // Role is preserved from preRegData
+                            createdAt: new Date()
+                        };
+
+                        // Cleanup old doc
+                        await deleteDoc(preRegDoc.ref);
+                    } else {
+                        // Default new profile
+                        newProfile = {
+                            uid: firebaseUser.uid,
+                            nama: firebaseUser.displayName || "User",
+                            email: firebaseUser.email || "",
+                            role: "guru",
+                            createdAt: new Date()
+                        };
+                    }
+
+                    // Create UID-based doc
                     await setDoc(userRef, {
                         ...newProfile,
                         createdAt: serverTimestamp(),

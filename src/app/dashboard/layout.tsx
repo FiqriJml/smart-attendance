@@ -5,7 +5,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
-import { FiHome, FiUsers, FiLogOut, FiBook, FiSun, FiMoon } from "react-icons/fi";
+import { FiHome, FiUsers, FiLogOut, FiBook, FiSun, FiMoon, FiUserCheck } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 import { InstallPrompt } from "@/components/ui";
 
@@ -41,6 +41,7 @@ export default function DashboardLayout({
     const navItems = [
         { href: "/dashboard", icon: FiHome, label: "Home" },
         { href: "/dashboard/students", icon: FiUsers, label: "Siswa" },
+        { href: "/dashboard/users", icon: FiUserCheck, label: "Users", adminOnly: true },
     ];
 
     const isActive = (href: string) => pathname === href;
@@ -63,6 +64,7 @@ export default function DashboardLayout({
                         {/* Desktop Nav Items */}
                         <div className="hidden md:flex items-center gap-1">
                             {navItems.map((item) => {
+                                if ((item as any).adminOnly && userProfile?.role !== 'admin') return null;
                                 return (
                                     <Link
                                         key={item.href}
@@ -117,6 +119,7 @@ export default function DashboardLayout({
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 safe-area-pb">
                 <div className="flex items-center justify-around py-2">
                     {navItems.map((item) => {
+                        if ((item as any).adminOnly && userProfile?.role !== 'admin') return null;
                         const Icon = item.icon;
                         return (
                             <Link
