@@ -186,7 +186,7 @@ export default function UserManagementPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <Badge variant={u.role === 'admin' ? 'default' : u.role === 'bk' ? 'info' : 'outline'}>
-                                            {u.role.toUpperCase().replace('_', ' ')}
+                                            {u.role === 'wali_kelas' ? 'GURU MAPEL & WALI' : u.role.toUpperCase().replace('_', ' ')}
                                         </Badge>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-600">
@@ -211,8 +211,8 @@ export default function UserManagementPage() {
                                         <button
                                             onClick={() => toggleStatus(u)}
                                             className={`text-xs px-2 py-1 rounded-full font-medium transition-colors ${u.is_active
-                                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                                                    : 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                                : 'bg-rose-100 text-rose-700 hover:bg-rose-200'
                                                 }`}
                                         >
                                             {u.is_active ? 'Active' : 'Inactive'}
@@ -265,30 +265,50 @@ export default function UserManagementPage() {
                         <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
                         <select
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            value={formData.role}
-                            onChange={e => setFormData({ ...formData, role: e.target.value as UserRole })}
+                            value={['guru', 'wali_kelas'].includes(formData.role) ? 'guru' : formData.role}
+                            onChange={e => {
+                                const newRole = e.target.value as UserRole;
+                                // Reset specific fields when changing main role
+                                setFormData({ ...formData, role: newRole });
+                            }}
                         >
                             <option value="guru">Guru Mapel</option>
-                            <option value="wali_kelas">Wali Kelas</option>
                             <option value="bk">Guru BK</option>
                             <option value="admin">Admin</option>
                         </select>
                     </div>
 
                     {/* Conditional Logic */}
-                    {formData.role === 'wali_kelas' && (
+                    {['guru', 'wali_kelas'].includes(formData.role) && (
                         <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
-                            <Select
-                                label="Pilih Rombel Perwalian"
-                                value={formData.wali_rombel_id}
-                                onChange={e => setFormData({ ...formData, wali_rombel_id: e.target.value })}
-                                required
-                            >
-                                <option value="">-- Pilih Rombel --</option>
-                                {rombels.map(r => (
-                                    <option key={r.id} value={r.id}>{r.nama_rombel}</option>
-                                ))}
-                            </Select>
+                            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.role === 'wali_kelas'}
+                                    onChange={e => {
+                                        setFormData({
+                                            ...formData,
+                                            role: e.target.checked ? 'wali_kelas' : 'guru'
+                                        });
+                                    }}
+                                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                                />
+                                Tugas Tambahan: Wali Kelas
+                            </label>
+
+                            {formData.role === 'wali_kelas' && (
+                                <Select
+                                    label="Pilih Rombel Perwalian"
+                                    value={formData.wali_rombel_id}
+                                    onChange={e => setFormData({ ...formData, wali_rombel_id: e.target.value })}
+                                    required
+                                >
+                                    <option value="">-- Pilih Rombel --</option>
+                                    {rombels.map(r => (
+                                        <option key={r.id} value={r.id}>{r.nama_rombel}</option>
+                                    ))}
+                                </Select>
+                            )}
                         </div>
                     )}
 
