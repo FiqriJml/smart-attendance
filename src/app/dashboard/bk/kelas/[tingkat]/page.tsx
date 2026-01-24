@@ -22,7 +22,7 @@ export default function BKKelasPage() {
     );
 
     useEffect(() => {
-        if (!loading && userProfile?.role !== 'bk') {
+        if (!loading && userProfile?.role !== 'bk' && userProfile?.role !== 'admin') {
             router.push('/dashboard');
         }
     }, [userProfile, loading, router]);

@@ -12,7 +12,7 @@ export default function BKDashboardPage() {
     const router = useRouter();
 
     useEffect(() => {
-        if (!loading && userProfile?.role !== 'bk') {
+        if (!loading && userProfile?.role !== 'bk' && userProfile?.role !== 'admin') {
             router.push('/dashboard');
         }
     }, [userProfile, loading, router]);
@@ -49,12 +49,17 @@ export default function BKDashboardPage() {
                     </Link>
                 ))}
 
-                <Link href="/dashboard/bk/wilayah">
+                <Link href={userProfile.role === 'admin' ? "/dashboard/bk/monitoring-wilayah" : "/dashboard/bk/wilayah"}>
                     <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-6 hover:scale-[1.02] transition-transform cursor-pointer">
                         <FiMapPin className="mb-3" size={28} />
-                        <h3 className="text-lg font-bold">Wilayah Saya</h3>
+                        <h3 className="text-lg font-bold">
+                            {userProfile.role === 'admin' ? "Data Wilayah BK" : "Wilayah Saya"}
+                        </h3>
                         <p className="text-sm opacity-80">
-                            {(userProfile.assigned_rombel_ids || []).length} Rombel Binaan
+                            {userProfile.role === 'admin'
+                                ? "Monitoring semua wilayah BK"
+                                : `${(userProfile.assigned_rombel_ids || []).length} Rombel Binaan`
+                            }
                         </p>
                     </Card>
                 </Link>

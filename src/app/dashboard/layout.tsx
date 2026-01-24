@@ -5,7 +5,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
-import { FiHome, FiUsers, FiLogOut, FiBook, FiSun, FiMoon, FiUserCheck } from "react-icons/fi";
+import { FiHome, FiUsers, FiLogOut, FiBook, FiSun, FiMoon, FiUserCheck, FiClipboard } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 import { InstallPrompt } from "@/components/ui";
 
@@ -45,6 +45,7 @@ export default function DashboardLayout({
             label: "Home"
         },
         { href: "/dashboard/students", icon: FiUsers, label: "Siswa" },
+        { href: "/dashboard/bk", icon: FiClipboard, label: "Absensi", adminOnly: true },
         { href: "/dashboard/users", icon: FiUserCheck, label: "Users", adminOnly: true },
     ];
 
