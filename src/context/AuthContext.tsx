@@ -98,9 +98,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             }
                         }
 
-                        // Not in Whitelist and No Legacy Account
-                        await signOut(auth);
-                        alert("Akses Ditolak. Email Anda tidak terdaftar. Silakan hubungi Admin (Pak Indra) untuk pendaftaran.");
+                        // Not in Whitelist and No Legacy Account -> REGISTER PENDING (Self-Service)
+                        const newPendingProfile: UserProfile = {
+                            email: emailKey,
+                            nama: firebaseUser.displayName || "User",
+                            role: 'guru', // Default role
+                            is_active: false, // Pending Admin Approval
+                            uid: firebaseUser.uid,
+                            createdAt: serverTimestamp() as any,
+                            updatedAt: serverTimestamp() as any
+                        };
+
+                        try {
+                            await setDoc(userRef, newPendingProfile);
+                            await signOut(auth);
+                            alert("Pendaftaran Berhasil! Akun Anda sedang MENUNGGU KONFIRMASI Admin. Silakan hubungi Admin untuk aktivasi.");
+                        } catch (regError) {
+                            console.error("Registration Error", regError);
+                            await signOut(auth);
+                            alert("Gagal mendaftar. Silakan coba lagi.");
+                        }
+
                         setUserProfile(null);
                     }
                 } catch (err) {
