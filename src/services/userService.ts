@@ -62,7 +62,7 @@ export const userService = {
 
     async getAllRombels(): Promise<Rombel[]> {
         try {
-            const snapshot = await getDocs(collection(db, "rombels"));
+            const snapshot = await getDocs(collection(db, "rombel"));
             const rombels = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -76,7 +76,7 @@ export const userService = {
 
     async getRombelById(rombelId: string): Promise<Rombel | null> {
         try {
-            const ref = doc(db, "rombels", rombelId);
+            const ref = doc(db, "rombel", rombelId);
             const snap = await getDoc(ref);
             if (!snap.exists()) return null;
             return {

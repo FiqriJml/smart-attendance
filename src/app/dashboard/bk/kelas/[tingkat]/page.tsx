@@ -33,7 +33,7 @@ export default function BKKelasPage() {
         </div>
     );
 
-    const gradeRombels = (rombels || []).filter(r => r.tingkat === tingkat);
+    const gradeRombels = (rombels || []).filter(r => Number(r.tingkat) === tingkat);
     const gradeLabel = tingkat === 10 ? "X" : tingkat === 11 ? "XI" : "XII";
 
     return (
