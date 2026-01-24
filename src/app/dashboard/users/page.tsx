@@ -93,12 +93,17 @@ export default function UserManagementPage() {
                 createdAt: editingUser?.createdAt,
             };
 
+            // Remove undefined keys to prevent Firestore error
+            const cleanPayload = Object.fromEntries(
+                Object.entries(payload).filter(([_, v]) => v !== undefined)
+            );
+
             if (editingUser) {
                 // Update by Email
-                await userService.updateUser(editingUser.email, payload);
+                await userService.updateUser(editingUser.email, cleanPayload);
             } else {
                 // Create New (Email as ID)
-                await userService.createUser(payload);
+                await userService.createUser(cleanPayload as UserProfile);
             }
 
             setIsModalOpen(false);
