@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useClasses } from "@/features/classes/hooks/useClasses";
 import { ClassCard } from "@/features/classes/components/ClassCard";
 import { CreateClassModal } from "@/features/classes/components/CreateClassModal";
 import { Button, Card } from "@/components/ui";
-import { FiPlus, FiGrid } from "react-icons/fi";
+import { FiPlus, FiGrid, FiClipboard } from "react-icons/fi";
+import Link from "next/link";
 
 export default function DashboardPage() {
-    const { user } = useAuth();
+    const { user, userProfile, loading: authLoading } = useAuth();
+    const router = useRouter();
     const {
         classes,
         rombels,
@@ -19,6 +22,13 @@ export default function DashboardPage() {
         loadRombels,
         isLoadingRombels
     } = useClasses(user?.uid);
+
+    // Redirect BK users to their dedicated dashboard
+    useEffect(() => {
+        if (!authLoading && userProfile?.role === 'bk') {
+            router.push('/dashboard/bk');
+        }
+    }, [userProfile, authLoading, router]);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -44,6 +54,26 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-6">
+            {/* Wali Kelas Logic */}
+            {userProfile?.wali_rombel_id && (
+                <div className="p-6 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-2xl text-white shadow-lg mb-8">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold mb-1">Tugas Wali Kelas</h2>
+                            <p className="text-indigo-100 text-sm">
+                                Kelola absensi harian kelas binaan Anda: <span className="font-bold text-white">{userProfile.wali_rombel_id}</span>
+                            </p>
+                        </div>
+                        <Link href={`/dashboard/attendance/${userProfile.wali_rombel_id}`}>
+                            <Button className="bg-white text-indigo-600 hover:bg-indigo-50 border-0">
+                                <FiClipboard className="mr-2" />
+                                Input Absensi Kelas
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>

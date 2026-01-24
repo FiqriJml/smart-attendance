@@ -3,6 +3,7 @@ import { UserProfile, Rombel, UserRole } from "@/types";
 import {
     collection,
     getDocs,
+    getDoc,
     doc,
     setDoc,
     updateDoc,
@@ -61,19 +62,30 @@ export const userService = {
 
     async getAllRombels(): Promise<Rombel[]> {
         try {
-            const snapshot = await getDocs(collection(db, "rombel"));
-            const rombels = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    nama_rombel: data.nama_rombel || doc.id,
-                    ...data
-                } as Rombel;
-            });
+            const snapshot = await getDocs(collection(db, "rombels"));
+            const rombels = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }) as Rombel);
             return rombels.sort((a, b) => a.nama_rombel.localeCompare(b.nama_rombel));
         } catch (error) {
             console.error("Error fetching rombels:", error);
             return [];
+        }
+    },
+
+    async getRombelById(rombelId: string): Promise<Rombel | null> {
+        try {
+            const ref = doc(db, "rombels", rombelId);
+            const snap = await getDoc(ref);
+            if (!snap.exists()) return null;
+            return {
+                id: snap.id,
+                ...snap.data()
+            } as Rombel;
+        } catch (error) {
+            console.error("Error fetching rombel:", error);
+            return null;
         }
     }
 };

@@ -39,7 +39,11 @@ export default function DashboardLayout({
     if (!user) return null;
 
     const navItems = [
-        { href: "/dashboard", icon: FiHome, label: "Home" },
+        {
+            href: userProfile?.role === 'bk' ? "/dashboard/bk" : "/dashboard",
+            icon: FiHome,
+            label: "Home"
+        },
         { href: "/dashboard/students", icon: FiUsers, label: "Siswa" },
         { href: "/dashboard/users", icon: FiUserCheck, label: "Users", adminOnly: true },
     ];

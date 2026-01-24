@@ -54,7 +54,7 @@ export interface ClassSession {
     active: boolean;
 }
 
-export type AttendanceStatus = 'S' | 'I' | 'A';
+export type AttendanceStatus = 'S' | 'I' | 'A' | 'hadir' | 'sakit' | 'izin' | 'alpha' | 'terlambat';
 
 export interface AttendanceRecord {
     nisn: string;
@@ -67,4 +67,17 @@ export interface AttendanceMonthly {
     bulan: string; // "01", "02", etc.
     tahun: string; // "2024"
     history: Record<string, AttendanceRecord[]>; // Key: "01", "02" (date) -> List of absentee
+}
+
+// BK Semester-Based Attendance with Audit Trail
+export interface DailyAttendanceEntry {
+    records: AttendanceRecord[];
+    updated_by: string; // Email of user who filled
+    updated_at: any; // serverTimestamp
+}
+
+export interface DailyAttendanceSemester {
+    rombel_id: string;
+    semester_id: string; // e.g. "2024-2025-genap"
+    history: Record<string, DailyAttendanceEntry>; // Key: "2024-03-01" -> Entry
 }
