@@ -2,33 +2,35 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import useSWR from "swr";
 import { userService } from "@/services/userService";
 import { attendanceService } from "@/services/attendanceService";
 import { Card, Button } from "@/components/ui";
-import { FiArrowLeft, FiSave, FiCheck } from "react-icons/fi";
+import { FiArrowLeft, FiSave, FiCalendar, FiCheck, FiRefreshCw, FiBarChart2 } from "react-icons/fi";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import { AttendanceRecord, AttendanceStatus } from "@/types";
+import { AttendanceToggle, StatsBar } from "@/features/attendance/components/AttendanceToggle";
 
-export default function DailyAttendancePage() {
+export default function AttendancePage() {
     const { userProfile, loading } = useAuth();
     const router = useRouter();
     const params = useParams();
-    const rombelId = decodeURIComponent(params.rombelId as string);
+    const rombelId = typeof params?.rombelId === 'string' ? decodeURIComponent(params.rombelId) : "";
 
     const [selectedDate, setSelectedDate] = useState(
         new Date().toISOString().split('T')[0]
     );
-    const [attendanceData, setAttendanceData] = useState<Record<string, AttendanceStatus>>({});
+    // Local state uses 'H' instead of 'hadir' to match AttendanceToggle component
+    const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceStatus | 'H'>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<string | null>(null);
 
-    // Assume current semester (you can make this dynamic later)
+    // Assume current semester (you can make this dynamic later or helper)
     const currentSemester = "2024-2025-genap";
 
-    const { data: rombel, isLoading } = useSWR(
+    const { data: rombel, isLoading: isLoadingRombel } = useSWR(
         rombelId ? `rombel-${rombelId}` : null,
         () => userService.getRombelById(rombelId)
     );
@@ -38,38 +40,36 @@ export default function DailyAttendancePage() {
         () => attendanceService.getDailyAttendance(rombelId, currentSemester, selectedDate)
     );
 
+    // Auth Protection
     useEffect(() => {
-        if (!loading && userProfile) {
-            // Access Control Logic
-            const isBK = userProfile.role === 'bk';
-            const isAdmin = userProfile.role === 'admin';
-            const isWaliKelas = userProfile.wali_rombel_id === rombelId;
-
-            if (!isBK && !isAdmin && !isWaliKelas) {
-                toast.error("Anda tidak memiliki akses ke kelas ini");
-                router.push('/dashboard');
-            }
+        if (!loading && userProfile?.role !== 'bk' && userProfile?.role !== 'admin' && userProfile?.role !== 'wali_kelas') {
+            router.push('/dashboard');
         }
-    }, [userProfile, loading, router, rombelId]);
+    }, [userProfile, loading, router]);
 
+    // Initialize Data
     useEffect(() => {
-        if (existingAttendance && existingAttendance.records) {
-            // Convert AttendanceRecord[] to Record<nisn, status>
-            const dataMap: Record<string, AttendanceStatus> = {};
-            (rombel?.daftar_siswa_ref || []).forEach(siswa => {
-                const record = existingAttendance.records.find(r => r.nisn === siswa.nisn);
-                dataMap[siswa.nisn] = record ? record.status : 'hadir';
-            });
-            setAttendanceData(dataMap);
-            setLastSaved(existingAttendance.updated_by || null);
-        } else if (rombel) {
-            // Initialize with all "hadir"
-            const initialData: Record<string, AttendanceStatus> = {};
+        if (rombel) {
+            const initialMap: Record<string, AttendanceStatus | 'H'> = {};
+
+            // Default all to 'H'
             (rombel.daftar_siswa_ref || []).forEach(siswa => {
-                initialData[siswa.nisn] = 'hadir';
+                initialMap[siswa.nisn] = 'H';
             });
-            setAttendanceData(initialData);
-            setLastSaved(null);
+
+            // Override with existing data if available
+            if (existingAttendance && existingAttendance.records) {
+                existingAttendance.records.forEach(r => {
+                    // Map 'hadir' to 'H' for component compatibility
+                    const status = r.status === 'hadir' ? 'H' : r.status;
+                    initialMap[r.nisn] = status;
+                });
+                setLastSaved(existingAttendance.updated_by || null);
+            } else {
+                setLastSaved(null);
+            }
+
+            setAttendanceMap(initialMap);
         }
     }, [existingAttendance, rombel, selectedDate]);
 
@@ -78,10 +78,12 @@ export default function DailyAttendancePage() {
 
         setIsSaving(true);
         try {
-            // Convert Record<nisn, status> to AttendanceRecord[]
-            const records: AttendanceRecord[] = Object.entries(attendanceData).map(([nisn, status]) => ({
+            // Convert Map back to Records
+            // 'H' -> 'hadir' for database consistency (or keep 'H' if allowed, but types say 'hadir')
+            // The type definition says 'hadir'.
+            const records: AttendanceRecord[] = Object.entries(attendanceMap).map(([nisn, status]) => ({
                 nisn,
-                status
+                status: status === 'H' ? 'hadir' : status as AttendanceStatus
             }));
 
             await attendanceService.recordDailyAttendance(
@@ -91,6 +93,7 @@ export default function DailyAttendancePage() {
                 records,
                 userProfile.email
             );
+
             setLastSaved(userProfile.email);
             await mutate(); // Refresh data
             toast.success('Kehadiran berhasil disimpan');
@@ -102,118 +105,144 @@ export default function DailyAttendancePage() {
         }
     };
 
-    if (loading || !userProfile || isLoading) return (
-        <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-3 border-indigo-600 border-t-transparent" />
-        </div>
-    );
+    const stats = useMemo(() => {
+        const result = { H: 0, S: 0, I: 0, A: 0 };
+        Object.values(attendanceMap).forEach(s => {
+            // Map 'hadir' to 'H' for counting if needed, but our state is already 'H' or 'S'/'I'/'A'
+            // If state has 'hadir' (from DB directly without conversion), handle it.
+            // But we convert in useEffect.
+            const key = s === 'hadir' ? 'H' : s;
+            if (key in result) result[key as keyof typeof result]++;
+        });
+        return result;
+    }, [attendanceMap]);
 
-    if (!rombel) return (
-        <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <div className="text-xl font-bold text-slate-800">Rombel Tidak Ditemukan</div>
-            <p className="text-slate-500">ID Rombel: {rombelId}</p>
-            <Link href={getBackLink()}>
-                <Button>Kembali</Button>
-            </Link>
-        </div>
-    );
-
-    const statusOptions: Array<{ value: AttendanceStatus; label: string; color: string }> = [
-        { value: 'hadir', label: 'Hadir', color: 'bg-emerald-500' },
-        { value: 'terlambat', label: 'Terlambat', color: 'bg-amber-500' },
-        { value: 'sakit', label: 'Sakit', color: 'bg-blue-500' },
-        { value: 'izin', label: 'Izin', color: 'bg-purple-500' },
-        { value: 'alpha', label: 'Alpha', color: 'bg-red-500' }
-    ];
-
-    function getBackLink() {
-        if (userProfile?.role === 'bk') return '/dashboard/bk';
-        return '/dashboard';
+    const setStatus = (nisn: string, status: AttendanceStatus | 'H') => {
+        setAttendanceMap(prev => ({
+            ...prev,
+            [nisn]: status
+        }));
     };
 
-    return (
-        <>
-            <Toaster position="top-right" />
-            <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <Link href={getBackLink()}>
-                        <Button variant="secondary" className="flex items-center gap-2">
-                            <FiArrowLeft />
-                            Kembali
-                        </Button>
-                    </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-800">{rombel.nama_rombel}</h1>
-                        <p className="text-slate-500">{rombel.program_keahlian}</p>
-                    </div>
-                </div>
+    if (loading || isLoadingRombel) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-3 border-indigo-600 border-t-transparent" />
+            </div>
+        );
+    }
 
-                <Card className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Pilih Tanggal
-                            </label>
+    if (!rombel) {
+        return (
+            <div className="text-center py-12">
+                <h2 className="text-xl font-bold text-slate-800">Rombel Tidak Ditemukan</h2>
+                <p className="text-slate-500 mt-2">Data rombel tidak tersedia.</p>
+                <Link href="/dashboard/bk" className="inline-block mt-4">
+                    <Button variant="secondary">Kembali</Button>
+                </Link>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 pb-24">
+            <Toaster position="top-right" />
+
+            {/* Header */}
+            <Card noPadding className="overflow-hidden">
+                <div className="p-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3 mb-4">
+                        <Link href={`/dashboard/bk/kelas/${rombel.tingkat}`}>
+                            <Button variant="ghost" className="p-2 hover:bg-slate-100 rounded-lg transition-colors h-auto w-auto">
+                                <FiArrowLeft className="text-slate-500" size={20} />
+                            </Button>
+                        </Link>
+                        <div className="flex-1 min-w-0">
+                            <h1 className="text-lg font-bold text-slate-800 truncate">
+                                {rombel.nama_rombel}
+                            </h1>
+                            <p className="text-sm text-slate-500">{rombel.program_keahlian}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 flex-1 min-w-[180px]">
+                            <FiCalendar className="text-indigo-600" size={18} />
                             <input
                                 type="date"
                                 value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                onChange={e => setSelectedDate(e.target.value)}
+                                className="bg-transparent outline-none text-sm font-medium text-slate-700 flex-1"
                             />
                         </div>
+
+                        <Link href={`/dashboard/attendance/${rombelId}/rekap`}>
+                            <Button variant="secondary" className="flex items-center gap-2 whitespace-nowrap">
+                                <FiBarChart2 size={16} />
+                                Rekap
+                            </Button>
+                        </Link>
+
                         {lastSaved && (
-                            <div className="text-sm text-slate-600">
-                                <FiCheck className="inline mr-1 text-emerald-600" />
-                                Terakhir diisi oleh: {lastSaved}
+                            <div className="text-xs text-slate-500 flex items-center gap-1 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
+                                <FiCheck size={14} className="text-emerald-600" />
+                                Updated by: {lastSaved.split('@')[0]}
                             </div>
                         )}
                     </div>
+                </div>
 
-                    <div className="space-y-2 mb-6">
-                        {(rombel.daftar_siswa_ref || []).map((siswa, idx) => (
-                            <div
-                                key={siswa.nisn}
-                                className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-medium text-slate-500 w-8">
-                                        {idx + 1}
-                                    </span>
-                                    <span className="font-medium text-slate-800">
-                                        {siswa.nama}
-                                    </span>
-                                </div>
-                                <div className="flex gap-2">
-                                    {statusOptions.map(option => (
-                                        <button
-                                            key={option.value}
-                                            onClick={() => setAttendanceData(prev => ({
-                                                ...prev,
-                                                [siswa.nisn]: option.value
-                                            }))}
-                                            className={`px-3 py-1 rounded-lg text-sm font-medium transition ${attendanceData[siswa.nisn] === option.value
-                                                ? `${option.color} text-white`
-                                                : 'bg-white text-slate-600 hover:bg-slate-200'
-                                                }`}
-                                        >
-                                            {option.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                {/* Stats Bar */}
+                <div className="p-4 bg-slate-50">
+                    <StatsBar stats={stats} />
+                </div>
+            </Card>
 
+            {/* Student List */}
+            <div className="space-y-2">
+                <h2 className="text-sm font-medium text-slate-500 px-1">
+                    Daftar Siswa ({rombel.daftar_siswa_ref?.length || 0})
+                </h2>
+
+                <div className="space-y-2">
+                    {(rombel.daftar_siswa_ref || []).map((siswa) => (
+                        <AttendanceToggle
+                            key={siswa.nisn}
+                            value={attendanceMap[siswa.nisn] || 'H'}
+                            onChange={(status) => setStatus(siswa.nisn, status)}
+                            studentName={siswa.nama}
+                            nisn={siswa.nisn}
+                            disabled={isSaving}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* Floating Save Button */}
+            <div className="fixed bottom-20 md:bottom-6 left-0 right-0 px-4 md:px-6 z-30">
+                <div className="max-w-7xl mx-auto">
                     <Button
+                        variant="primary"
+                        size="lg"
+                        fullWidth
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="w-full flex items-center justify-center gap-2"
+                        className="shadow-lg flex items-center justifying-center gap-2"
                     >
-                        <FiSave />
-                        {isSaving ? 'Menyimpan...' : 'Simpan Kehadiran'}
+                        {isSaving ? (
+                            <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                                Menyimpan...
+                            </>
+                        ) : (
+                            <>
+                                <FiSave size={20} />
+                                Simpan Kehadiran
+                            </>
+                        )}
                     </Button>
-                </Card>
+                </div>
             </div>
-        </>
+        </div>
     );
 }

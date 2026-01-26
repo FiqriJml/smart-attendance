@@ -102,7 +102,6 @@ export default function BKAttendancePage() {
 
     const statusOptions: Array<{ value: AttendanceStatus; label: string; color: string }> = [
         { value: 'hadir', label: 'Hadir', color: 'bg-emerald-500' },
-        { value: 'terlambat', label: 'Terlambat', color: 'bg-amber-500' },
         { value: 'sakit', label: 'Sakit', color: 'bg-blue-500' },
         { value: 'izin', label: 'Izin', color: 'bg-purple-500' },
         { value: 'alpha', label: 'Alpha', color: 'bg-red-500' }
@@ -152,13 +151,18 @@ export default function BKAttendancePage() {
                                 key={siswa.nisn}
                                 className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition"
                             >
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-medium text-slate-500 w-8">
+                                <div className="flex items-start gap-3 flex-1 min-w-0 mr-4">
+                                    <span className="text-sm font-medium text-slate-500 w-6 pt-0.5 shrink-0">
                                         {idx + 1}
                                     </span>
-                                    <span className="font-medium text-slate-800">
-                                        {siswa.nama}
-                                    </span>
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-slate-800 leading-tight">
+                                            {siswa.nama}
+                                        </span>
+                                        <span className="text-xs text-slate-500 mt-0.5">
+                                            {siswa.nisn}
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="flex gap-2">
                                     {statusOptions.map(option => (
@@ -169,8 +173,8 @@ export default function BKAttendancePage() {
                                                 [siswa.nisn]: option.value
                                             }))}
                                             className={`px-3 py-1 rounded-lg text-sm font-medium transition ${attendanceData[siswa.nisn] === option.value
-                                                    ? `${option.color} text-white`
-                                                    : 'bg-white text-slate-600 hover:bg-slate-200'
+                                                ? `${option.color} text-white`
+                                                : 'bg-white text-slate-600 hover:bg-slate-200'
                                                 }`}
                                         >
                                             {option.label}

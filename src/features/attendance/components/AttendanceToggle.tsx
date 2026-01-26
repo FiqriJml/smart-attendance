@@ -48,7 +48,7 @@ export function AttendanceToggle({
         <div className="flex items-center justify-between py-3 px-4 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
             {/* Student Info */}
             <div className="flex-1 min-w-0 mr-4">
-                <p className="font-medium text-slate-800 truncate">{studentName}</p>
+                <p className="font-medium text-slate-800 leading-tight">{studentName}</p>
                 <p className="text-xs text-slate-400">{nisn}</p>
             </div>
 
@@ -86,7 +86,12 @@ function getStatusTitle(status: AttendanceStatus | 'H'): string {
         H: 'Hadir',
         S: 'Sakit',
         I: 'Izin',
-        A: 'Alpha (Tanpa Keterangan)'
+        A: 'Alpha (Tanpa Keterangan)',
+        hadir: 'Hadir',
+        sakit: 'Sakit',
+        izin: 'Izin',
+        alpha: 'Alpha',
+        terlambat: 'Terlambat'
     };
     return titles[status];
 }
